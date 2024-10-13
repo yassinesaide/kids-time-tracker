@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply font-kid;
+}
+
+/* Add these new styles */
+.ltr {
+  direction: ltr;
+}
+
+.rtl {
+  direction: rtl;
+}
+
+/* Adjust input fields for RTL */
+.rtl input[type="text"],
+.rtl input[type="number"] {
+  text-align: right;
+}
