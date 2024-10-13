@@ -1,10 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "./LanguageContext";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import HistoryComponent from "./HistoryComponent";
 
 interface Reminder {
   id: number;
   text: string;
   time: number;
+}
+
+interface HistoryEntry {
+  id: number;
+  date: string;
+  totalTime: number;
+  homeworkTime: number;
 }
 
 const translations = {
@@ -24,6 +34,14 @@ const translations = {
     noReminders: "No reminders set",
     inMinutes: "in",
     minutes: "minutes",
+    reminder: "Reminder",
+    reminderEmpty: "Please enter a reminder text",
+    reminderAdded: "Reminder added successfully",
+    history: "History",
+    date: "Date",
+    totalTimeSpent: "Total Time Spent",
+    homeworkTimeSpent: "Homework Time Spent",
+    noHistory: "No history available",
   },
   ar: {
     title: "متتبع وقت الأطفال",
@@ -41,6 +59,14 @@ const translations = {
     noReminders: "لا توجد تذكيرات",
     inMinutes: "في غضون",
     minutes: "دقائق",
+    reminder: "تذكير",
+    reminderEmpty: "الرجاء إدخال نص التذكير",
+    reminderAdded: "تمت إضافة التذكير بنجاح",
+    history: "السجل",
+    date: "التاريخ",
+    totalTimeSpent: "إجمالي الوقت المستغرق",
+    homeworkTimeSpent: "وقت الواجب المنزلي المستغرق",
+    noHistory: "لا يوجد سجل متاح",
   },
 };
 
@@ -55,6 +81,33 @@ const App: React.FC = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [newReminder, setNewReminder] = useState("");
   const [newReminderTime, setNewReminderTime] = useState(5);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  const checkReminders = useCallback(() => {
+    reminders.forEach((reminder) => {
+      if (totalTimeSpent === reminder.time) {
+        toast.info(`${t.reminder}: ${reminder.text}`, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+        setReminders((prevReminders) => prevReminders.filter((r) => r.id !== reminder.id));
+      }
+    });
+  }, [reminders, totalTimeSpent, t.reminder]);
 
   useEffect(() => {
     let interval: number | undefined;
@@ -68,41 +121,92 @@ const App: React.FC = () => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, isHomeworkTimer, reminders]);
+  }, [isTimerRunning, isHomeworkTimer, checkReminders]);
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  const addHistoryEntry = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const existingEntry = history.find(entry => entry.date === today);
+
+    if (existingEntry) {
+      setHistory(prevHistory =>
+        prevHistory.map(entry =>
+          entry.date === today
+            ? { ...entry, totalTime: totalTimeSpent, homeworkTime: homeworkTimeSpent }
+            : entry
+        )
+      );
+    } else {
+      const newEntry: HistoryEntry = {
+        id: Date.now(),
+        date: today,
+        totalTime: totalTimeSpent,
+        homeworkTime: homeworkTimeSpent,
+      };
+      setHistory(prevHistory => [...prevHistory, newEntry]);
+    }
+  }, [totalTimeSpent, homeworkTimeSpent, history]);
+
+  const toggleTimer = () => {
+    if (isTimerRunning) {
+      addHistoryEntry();
+    }
+    setIsTimerRunning(!isTimerRunning);
   };
 
-  const toggleTimer = () => setIsTimerRunning(!isTimerRunning);
   const toggleHomeworkTimer = () => setIsHomeworkTimer(!isHomeworkTimer);
 
   const addReminder = () => {
-    if (newReminder.trim() !== "") {
-      const newReminderObj: Reminder = {
-        id: Date.now(),
-        text: newReminder,
-        time: totalTimeSpent + newReminderTime * 60,
-      };
-      setReminders([...reminders, newReminderObj]);
-      setNewReminder("");
-      setNewReminderTime(5);
+    if (newReminder.trim() === "") {
+      toast.error(t.reminderEmpty, {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
     }
-  };
 
-  const checkReminders = () => {
-    reminders.forEach((reminder) => {
-      if (totalTimeSpent === reminder.time) {
-        alert(`${t.setReminder}: ${reminder.text}`);
-        setReminders(reminders.filter((r) => r.id !== reminder.id));
-      }
+    const newReminderObj: Reminder = {
+      id: Date.now(),
+      text: newReminder,
+      time: totalTimeSpent + newReminderTime * 60,
+    };
+    setReminders(prevReminders => [...prevReminders, newReminderObj]);
+    setNewReminder("");
+    setNewReminderTime(5);
+
+    toast.success(t.reminderAdded, {
+      position: "top-center",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
     });
   };
+
+  const saveHistory = useCallback(() => {
+    localStorage.setItem('kidTimeTrackerHistory', JSON.stringify(history));
+  }, [history]);
+
+  const loadHistory = useCallback(() => {
+    const savedHistory = localStorage.getItem('kidTimeTrackerHistory');
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  useEffect(() => {
+    saveHistory();
+  }, [history, saveHistory]);
 
   return (
     <div
@@ -118,9 +222,9 @@ const App: React.FC = () => {
 
           <button
             onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-            className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded text-sm"
+            className="absolute top-2 right-2 bg-transparent hover:bg-gray-100 p-1 rounded"
           >
-            {language === "en" ? "العربية" : "English"}
+            {language === "en" ? "🇦🇪" : "🇬🇧"}
           </button>
 
           <div className="bg-yellow-100 p-3 rounded-2xl">
@@ -215,8 +319,31 @@ const App: React.FC = () => {
               <p className="text-pink-600 text-sm">{t.noReminders}</p>
             )}
           </div>
+
+          <HistoryComponent 
+            history={history} 
+            formatTime={formatTime} 
+            translations={{
+              history: t.history,
+              date: t.date,
+              totalTimeSpent: t.totalTimeSpent,
+              homeworkTimeSpent: t.homeworkTimeSpent,
+              noHistory: t.noHistory,
+            }} 
+          />
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={language === "ar"}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };
