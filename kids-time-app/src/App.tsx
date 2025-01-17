@@ -104,7 +104,9 @@ const App: React.FC = () => {
           draggable: true,
           progress: undefined,
         });
-        setReminders((prevReminders) => prevReminders.filter((r) => r.id !== reminder.id));
+        setReminders((prevReminders) =>
+          prevReminders.filter((r) => r.id !== reminder.id)
+        );
       }
     });
   }, [reminders, totalTimeSpent, t.reminder]);
@@ -124,14 +126,18 @@ const App: React.FC = () => {
   }, [isTimerRunning, isHomeworkTimer, checkReminders]);
 
   const addHistoryEntry = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const existingEntry = history.find(entry => entry.date === today);
+    const today = new Date().toISOString().split("T")[0];
+    const existingEntry = history.find((entry) => entry.date === today);
 
     if (existingEntry) {
-      setHistory(prevHistory =>
-        prevHistory.map(entry =>
+      setHistory((prevHistory) =>
+        prevHistory.map((entry) =>
           entry.date === today
-            ? { ...entry, totalTime: totalTimeSpent, homeworkTime: homeworkTimeSpent }
+            ? {
+                ...entry,
+                totalTime: totalTimeSpent,
+                homeworkTime: homeworkTimeSpent,
+              }
             : entry
         )
       );
@@ -142,7 +148,7 @@ const App: React.FC = () => {
         totalTime: totalTimeSpent,
         homeworkTime: homeworkTimeSpent,
       };
-      setHistory(prevHistory => [...prevHistory, newEntry]);
+      setHistory((prevHistory) => [...prevHistory, newEntry]);
     }
   }, [totalTimeSpent, homeworkTimeSpent, history]);
 
@@ -174,7 +180,7 @@ const App: React.FC = () => {
       text: newReminder,
       time: totalTimeSpent + newReminderTime * 60,
     };
-    setReminders(prevReminders => [...prevReminders, newReminderObj]);
+    setReminders((prevReminders) => [...prevReminders, newReminderObj]);
     setNewReminder("");
     setNewReminderTime(5);
 
@@ -190,11 +196,11 @@ const App: React.FC = () => {
   };
 
   const saveHistory = useCallback(() => {
-    localStorage.setItem('kidTimeTrackerHistory', JSON.stringify(history));
+    localStorage.setItem("kidTimeTrackerHistory", JSON.stringify(history));
   }, [history]);
 
   const loadHistory = useCallback(() => {
-    const savedHistory = localStorage.getItem('kidTimeTrackerHistory');
+    const savedHistory = localStorage.getItem("kidTimeTrackerHistory");
     if (savedHistory) {
       setHistory(JSON.parse(savedHistory));
     }
@@ -320,16 +326,16 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <HistoryComponent 
-            history={history} 
-            formatTime={formatTime} 
+          <HistoryComponent
+            history={history}
+            formatTime={formatTime}
             translations={{
               history: t.history,
               date: t.date,
               totalTimeSpent: t.totalTimeSpent,
               homeworkTimeSpent: t.homeworkTimeSpent,
               noHistory: t.noHistory,
-            }} 
+            }}
           />
         </div>
       </div>
@@ -344,6 +350,84 @@ const App: React.FC = () => {
         draggable
         pauseOnHover
       />
+      <style>
+        {`
+          /* Enhance the overall styling of the app */
+
+          /* Container for the entire app */
+          .min-h-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+          }
+
+          /* Main card styling */
+          .bg-white {
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 800px;
+          }
+
+          /* Title styling */
+          .text-3xl {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4a4a4a;
+            text-align: center;
+            margin-bottom: 20px;
+          }
+
+          /* Button styling */
+          button {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+          }
+
+          button:hover {
+            opacity: 0.9;
+          }
+
+          /* Input styling */
+          input[type='text'],
+          input[type='number'] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+          }
+
+          input:focus {
+            outline: none;
+            border-color: #2575fc;
+            box-shadow: 0 0 5px rgba(37, 117, 252, 0.5);
+          }
+
+          /* Reminder list styling */
+          .list-disc {
+            padding-left: 20px;
+          }
+
+          /* Responsive adjustments */
+          @media (max-width: 768px) {
+            .grid-cols-2 {
+              grid-template-columns: 1fr;
+            }
+            .text-3xl {
+              font-size: 1.5rem;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };
